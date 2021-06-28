@@ -1,0 +1,45 @@
+pipeline{
+tools{
+maven "3.8.1"
+}
+  agent any
+ stages{ 
+   stage('copycode from git'){
+   steps{
+   git branch: 'development', credentialsId: 'be30b225-cf1c-4417-8e40-a55bb553ea1b', url: 'https://github.com/Mallikarjuna1985-test/maven-web-application.git'
+  }
+  }
+  stage('Maven Build'){
+  steps{
+  sh "mvn clean package"
+  }
+  }
+  stage('Excecute sonarqube report'){
+  steps{
+  sh "mvn clean sonar:sonar"
+  }
+  }
+  stage('Deploy build with Nexus'){
+  steps{
+  sh "mvn deploy"
+  }
+  }
+  stage('Report genarate from Tomcatserver'){
+  steps{
+  sshagent(['1c334bc0-a94c-4427-a439-1c2692f698f3']) {
+  sh "scp -o stricthostkeychecking=no target/maven-web-application.war ec2-user@3.139.99.80:/opt/apache-tomcat-9.0.46/webapps"
+  }
+  }
+}
+  }
+  post{
+  success{
+  emailext body: '''Build over - success
+
+Regards,
+Mallikarjuna
+8123456627
+''', replyTo: 'mallikarjun.sanna@gmail.com', subject: 'Build over - success', to: 'mallikarjun.sanna@gmail.com'
+  }
+  }
+  }//pipeline close
